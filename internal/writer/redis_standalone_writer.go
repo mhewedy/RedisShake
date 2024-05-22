@@ -44,27 +44,6 @@ type redisStandaloneWriter struct {
 	}
 }
 
-func NewRedisSentinelWriter(ctx context.Context, opts *RedisWriterOptions) Writer {
-	sentinel := client.NewSentinelClient(ctx, opts.Address, opts.Tls)
-	sentinel.Send("SENTINEL", "GET-MASTER-ADDR-BY-NAME", opts.Master)
-	addr, err := sentinel.Receive()
-	if err != nil {
-		log.Panicf(err.Error())
-	}
-	hostport := addr.([]interface{})
-	address := fmt.Sprintf("%s:%s", hostport[0].(string), hostport[1].(string))
-	sentinel.Close()
-
-	redisOpt := &RedisWriterOptions{
-		Address:  address,
-		Username: opts.Address,
-		Password: opts.Password,
-		Tls:      opts.Tls,
-		OffReply: opts.OffReply,
-	}
-	return NewRedisStandaloneWriter(ctx, redisOpt)
-}
-
 func NewRedisStandaloneWriter(ctx context.Context, opts *RedisWriterOptions) Writer {
 	rw := new(redisStandaloneWriter)
 	rw.address = opts.Address
