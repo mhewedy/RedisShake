@@ -55,20 +55,14 @@ func NewRedisSentinelWriter(ctx context.Context, opts *RedisWriterOptions) Write
 	address := fmt.Sprintf("%s:%s", hostport[0].(string), hostport[1].(string))
 	sentinel.Close()
 
-	rw := new(redisStandaloneWriter)
-	rw.address = address
-	rw.stat.Name = "writer_" + strings.Replace(address, ":", "_", -1)
-	rw.client = client.NewRedisClient(ctx, address, opts.Username, opts.Password, opts.Tls)
-	if opts.OffReply {
-		log.Infof("turn off the reply of write")
-		rw.offReply = true
-		rw.client.Send("CLIENT", "REPLY", "OFF")
-	} else {
-		rw.chWaitReply = make(chan *entry.Entry, config.Opt.Advanced.PipelineCountLimit)
-		rw.chWg.Add(1)
-		go rw.processReply()
+	redisOpt := &RedisWriterOptions{
+		Address:  address,
+		Username: opts.Address,
+		Password: opts.Password,
+		Tls:      opts.Tls,
+		OffReply: opts.OffReply,
 	}
-	return rw
+	return NewRedisStandaloneWriter(ctx, redisOpt)
 }
 
 func NewRedisStandaloneWriter(ctx context.Context, opts *RedisWriterOptions) Writer {
