@@ -45,7 +45,7 @@ type redisStandaloneWriter struct {
 }
 
 func NewRedisSentinelWriter(ctx context.Context, opts *RedisWriterOptions) Writer {
-	sentinel := client.NewRedisClient(ctx, opts.Address, opts.Username, opts.Password, opts.Tls)
+	sentinel := client.NewSentinelClient(ctx, opts.Address, opts.Tls)
 	sentinel.Send("SENTINEL", "get-master-addr-by-name", opts.Master)
 	addr, err := sentinel.Receive()
 	if err != nil {

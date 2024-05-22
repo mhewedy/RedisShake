@@ -20,6 +20,44 @@ type Redis struct {
 	protoWriter *proto.Writer
 }
 
+func NewSentinelClient(ctx context.Context, address string, Tls bool) *Redis {
+	r := new(Redis)
+	var conn net.Conn
+	var dialer = &net.Dialer{
+		Timeout:   5 * time.Minute,
+		KeepAlive: 5 * time.Minute,
+	}
+	ctxWithDeadline, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+	var err error
+	if Tls {
+		tlsDialer := &tls.Dialer{
+			NetDialer: dialer,
+			Config:    &tls.Config{InsecureSkipVerify: true},
+		}
+		conn, err = tlsDialer.DialContext(ctxWithDeadline, "tcp", address)
+	} else {
+		conn, err = dialer.DialContext(ctxWithDeadline, "tcp", address)
+	}
+	if err != nil {
+		log.Panicf("dial failed. address=[%s], tls=[%v], err=[%v]", address, Tls, err)
+	}
+
+	r.conn = conn
+	r.reader = bufio.NewReader(conn)
+	r.writer = bufio.NewWriter(conn)
+	r.protoReader = proto.NewReader(r.reader)
+	r.protoWriter = proto.NewWriter(r.writer)
+
+	// ping to test connection
+	reply := r.DoWithStringReply("ping")
+	if reply != "PONG" {
+		panic("ping failed with reply: " + reply)
+	}
+
+	return r
+}
+
 func NewRedisClient(ctx context.Context, address string, username string, password string, Tls bool) *Redis {
 	r := new(Redis)
 	var conn net.Conn
