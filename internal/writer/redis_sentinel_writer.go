@@ -20,7 +20,7 @@ func NewRedisSentinelWriter(ctx context.Context, opts *RedisWriterOptions) Write
 
 	redisOpt := &RedisWriterOptions{
 		Address:  address,
-		Username: opts.Address,
+		Username: opts.Username,
 		Password: opts.Password,
 		Tls:      opts.Tls,
 		OffReply: opts.OffReply,
